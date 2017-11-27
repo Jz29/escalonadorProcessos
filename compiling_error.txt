@@ -1,0 +1,11 @@
+/media/jz/Novo volume/uft/7º PERIODO/SISTEMAS OPERACIONAIS/escalonador De Processos/p.cpp: In function ‘int b(int*, int)’:
+/media/jz/Novo volume/uft/7º PERIODO/SISTEMAS OPERACIONAIS/escalonador De Processos/p.cpp:24:11: error: invalid conversion from ‘int (*)[2]’ to ‘int’ [-fpermissive]
+   return &v;
+           ^
+/media/jz/Novo volume/uft/7º PERIODO/SISTEMAS OPERACIONAIS/escalonador De Processos/p.cpp:21:7: warning: address of local variable ‘v’ returned [-Wreturn-local-addr]
+   int v[2];
+       ^
+/media/jz/Novo volume/uft/7º PERIODO/SISTEMAS OPERACIONAIS/escalonador De Processos/p.cpp: In function ‘int main()’:
+/media/jz/Novo volume/uft/7º PERIODO/SISTEMAS OPERACIONAIS/escalonador De Processos/p.cpp:53:8: error: invalid conversion from ‘int’ to ‘int*’ [-fpermissive]
+   v = b(m, 4);
+        ^
