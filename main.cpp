@@ -49,16 +49,29 @@ void RUN() {    // ERRO DE LIXO NA CPU
   }
 }
 
-bool espaco_em_memoria(int *i, int *f, int t) {
-  for (int x=0; x < 100; x++) {
-    if (MEMORIA_PRINCIPAL[x] == 0) {  // LIVRE ?
-      *i = x;     // SALVA A POCISAO INICIAL
-      while( MEMORIA_PRINCIPAL[x] == 0 && (((*f)+1)-(*i)) < t && x < 100 ) {  // ATÉ ALCANÇAR O TAMANHO
-        *f = x;   // SALVA A POCISAO FINAL
-        x++;
+bool espaco_em_memoria(int *inicio, int *fim, int t) {
+  int *p = NULL;
+  int tamanho = 0;
+  int i, f;
+
+  for (int x=0; x < 100; x++){
+    if (m[x] == 0){
+      i = x;
+      while(m[x] == 0){
+        tamanho++;
+        if ( x < 99 )
+          x++;
+        else
+          break;
       }
-      if ( ((*f)+1)-(*i) >= t )
+      if(tamanho >= t){
+        f = (i + t) - 1;
+
+        *inicio = i;
+        *fim = f;
         return true;
+      }
+      tamanho = 0;
     }
   }
   return false;
