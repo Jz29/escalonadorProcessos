@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <queue>
+#include <list> // http://www.cplusplus.com/reference/list/list/
 
 using namespace std;
 
@@ -12,40 +13,42 @@ int memoria_utilizada = 0;
 int burst = 2;
 
 typedef queue<Processo> Fila;  // FILA DE PROCESSOS
+typedef list<Processo> Lista;  // LISTA DE PROCESSOS
 
 struct Bloqueado {
-  // Lista de processos;
+  Lista processo;
 };
+Bloqueado bloqueado;
 
 struct CPU {
   Processo *processo;
 };
+CPU cpu;
 
 struct Pronto {
   Fila processo;
 };
-
-// Bloqueado bloqueado;
 Pronto pronto;
-CPU cpu;
 
-void RUN() {    // ERRO DE LIXO NA CPU
 
-  if ( cpu.processo != NULL && cpu.processo->recursos.burst != 0 ) {
+void RUN() {
+
+  if ( cpu.processo != NULL && cpu.processo->recursos.burst != 0 ) {                  // SE CPU ESTIVER EM USO
+    // cpu.processo->recursos.quantum--;
     cpu.processo->recursos.burst--;
-    if ( cpu.processo->recursos.burst == 0 ) {  //ADD
-      memoria_utilizada = memoria_utilizada - cpu.processo->memoria.tamanho;
+    if ( cpu.processo->recursos.burst == 0 ) {                                        // ADD NOVO PROCESSO A CPU
+      memoria_utilizada = memoria_utilizada - cpu.processo->memoria.tamanho;          // ATUALIZA O USO DA MEMORIA
       for (int i = cpu.processo->memoria.inicio; i <= cpu.processo->memoria.fim; i++) // LIBERO DA MEMORIA PRINCIPAL
         MEMORIA_PRINCIPAL[i] = 0;
-      cpu.processo = NULL;  //ADD
+      cpu.processo = NULL;                                                            // CPU LIVRE
     }
   }
   else
     cpu.processo = NULL;
 
-  if ( cpu.processo == NULL && !pronto.processo.empty() ) {
-    cpu.processo = &pronto.processo.front();
-    pronto.processo.pop();
+  if ( cpu.processo == NULL && !pronto.processo.empty() ) {                           // SE HOUVER PROCESSOS PARA EXECUTAR NA FILA DE PRONTO
+    cpu.processo = &pronto.processo.front();                                          // MANDA DA FILA DE PRONTO PARA CPU
+    pronto.processo.pop();                                                            //
   }
 }
 
@@ -55,9 +58,9 @@ bool espaco_em_memoria(int *inicio, int *fim, int t) {
   int i, f;
 
   for (int x=0; x < 100; x++){
-    if (m[x] == 0){
+    if (MEMORIA_PRINCIPAL[x] == 0){
       i = x;
-      while(m[x] == 0){
+      while(MEMORIA_PRINCIPAL[x] == 0){
         tamanho++;
         if ( x < 99 )
           x++;
@@ -142,7 +145,7 @@ void MONITOR_CPU() {
 }
 
 int main() {
-  for (int i = 0; i < 100; i++)
+  for (int i = 0; i < 100; i++) // INICIALIZA COM A MEMORIA VAZIA
     MEMORIA_PRINCIPAL[i] = 0;
 
   cout << "Burst por processo: ";
@@ -157,7 +160,7 @@ int main() {
     ENTRADA();              // +PROCESSO ?
     RUN();                  // CPU
     MONITOR_CPU();          // MONITORA CPU, OSCIOSA OU NAO ?
-    MONITOR_MEMORIA();
+    MONITOR_MEMORIA();      // MOSTRA OS PROCESSOS ALOCADOS A MEMORIA
     PROCESSOS_AGUARDANDO(&pronto.processo); // FILA DE PRONTO
   }
 
