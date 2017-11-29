@@ -14,54 +14,42 @@ int memoria_utilizada = 0;
 typedef queue<Processo> Fila;  // FILA DE PROCESSOS
 typedef list<Processo> Lista;  // LISTA DE PROCESSOS
 
-struct Bloqueado {
-  Lista processo;
-  int timer;
-};
-Bloqueado bloqueado;
-
-struct CPU {
-  Processo *processo;
-};
-CPU cpu;
-
-struct Pronto {
-  Fila processo;
-};
-Pronto pronto;
+Lista bloqueado;
+Fila pronto;
+Processo *cpu;
 
 void RUN() {
-  int bloq = (rand() % 7);  // PROBABILIDADE PARA ESTADO DE ESPERA
+  int bloq = (rand() % 10);  // PROBABILIDADE PARA ESTADO DE ESPERA
 
-  if ( cpu.processo != NULL && cpu.processo->recursos.quantum > 0 ) {                 // SE CPU ESTIVER EM USO
-    cpu.processo->recursos.quantum--;
-    cpu.processo->recursos.burst--;
+  if ( cpu != NULL && cpu->recursos.quantum > 0 ) {                 // SE CPU ESTIVER EM USO
+    cpu->recursos.quantum--;
+    cpu->recursos.burst--;
 
-    if ( cpu.processo->recursos.burst <= 0 ) {                                        // SE O PROCESSO TERMINAR
-      for (int i = cpu.processo->memoria.inicio; i <= cpu.processo->memoria.fim; i++) // LIBERO DA MEMORIA PRINCIPAL
+    if ( cpu->recursos.burst <= 0 ) {                               // SE O PROCESSO TERMINAR
+      for (int i = cpu->memoria.inicio; i <= cpu->memoria.fim; i++) // LIBERO DA MEMORIA PRINCIPAL
         MEMORIA_PRINCIPAL[i] = 0;
-      memoria_utilizada = memoria_utilizada - cpu.processo->memoria.tamanho;          // ATUALIZA O USO DA MEMORIA
-      cpu.processo = NULL;                                                            // CPU LIVRE
+      memoria_utilizada = memoria_utilizada - cpu->memoria.tamanho; // ATUALIZA O USO DA MEMORIA
+      cpu = NULL;                                                   // CPU LIVRE
     }
-    else if ( cpu.processo->recursos.quantum <= 0 ) {                                 // PREEMPÇÃO
-      cpu.processo->recursos.quantum = 5;                                             //
-      pronto.processo.push( *cpu.processo );                                          // REENVIA O PROCESSO PARA A FILA DE PRONTO
-      cpu.processo = NULL;                                                            // LIBERA O PROCESSADOR
+    else if ( cpu->recursos.quantum <= 0 ) {                        // PREEMPÇÃO
+      cpu->recursos.quantum = 5;                                    //
+      pronto.push( *cpu );                                          // REENVIA O PROCESSO PARA A FILA DE PRONTO
+      cpu = NULL;                                                   // LIBERA O PROCESSADOR
     }
-    else if ( bloq == 1 ) {                                                           // CONDIÇÃO PARA ESTADO DE ESPERA
-      cpu.processo->recursos.timer = TEMPO;                                           // SALVA O TEMPO ATUAL
-      cpu.processo->recursos.espera = 5 + (rand() % 10);                              // TEMPO DE ESPERA
-      bloqueado.processo.push_front( *cpu.processo );                                 // MANDA DO CPU PARA LISTA DO ESTADO DE ESPERA
-      cpu.processo = NULL;                                                            // LIBERA O PROCESSADOR
+    else if ( bloq == 1 ) {                                         // CONDIÇÃO PARA ESTADO DE ESPERA
+      cpu->recursos.espera = 5 + (rand() % 10);                     // TEMPO DE ESPERA
+      cpu->recursos.quantum = 5;                                    // RECUPERA O QUANTUM
+      bloqueado.push_front( *cpu );                                 // MANDA DO CPU PARA LISTA DO ESTADO DE ESPERA
+      cpu = NULL;                                                   // LIBERA O PROCESSADOR
     }
 
   }
   else
-    cpu.processo = NULL;
+    cpu = NULL;
 
-  if ( cpu.processo == NULL && !pronto.processo.empty() ) {                           // SE HOUVER PROCESSOS PARA EXECUTAR NA FILA DE PRONTO
-    cpu.processo = &pronto.processo.front();                                          // MANDA DA FILA DE PRONTO PARA CPU
-    pronto.processo.pop();                                                            //
+  if ( cpu == NULL && !pronto.empty() ) {                           // SE HOUVER PROCESSOS PARA EXECUTAR NA FILA DE PRONTO
+    cpu = &pronto.front();                                          // MANDA DA FILA DE PRONTO PARA CPU
+    pronto.pop();                                                            //
   }
 }
 
@@ -107,7 +95,7 @@ void novo_processo() {
       p.memoria.fim = f;
       p.memoria.tamanho = t;
       memoria_utilizada = memoria_utilizada + t;
-      pronto.processo.push(p);
+      pronto.push(p);
       for (int x = i; x <= f; x++)
         MEMORIA_PRINCIPAL[x] = p.recursos.PID;
       cout << "Novo processo: \t" << t << "K"  << endl;
@@ -154,9 +142,9 @@ void MONITOR_MEMORIA() {
 }
 
 void MONITOR_CPU() {
-  if ( cpu.processo != NULL ) {
+  if ( cpu != NULL ) {
     cout << "\t\t <ID>\t<Burst>\t<Quantum>" << endl;
-    cout << "CPU: \t\t[ " << cpu.processo->memoria.tamanho << "K ]\t [ " << cpu.processo->recursos.burst << " ]\t  [ " << cpu.processo->recursos.quantum << " ]" << endl;
+    cout << "CPU: \t\t[ " << cpu->memoria.tamanho << "K ]\t [ " << cpu->recursos.burst << " ]\t  [ " << cpu->recursos.quantum << " ]" << endl;
   }
   else
     cout << "CPU: \t\t[ OSCIOSO ]" << endl;
@@ -164,23 +152,23 @@ void MONITOR_CPU() {
 
 void IO() {
   Lista aux;
-  cout << endl << endl << "I/O:" << endl;
-  while ( !bloqueado.processo.empty() ) {                       // ENQUANTO TEM PROCESSOS EM ESTADO DE ESPERA
-    cout << "[ " << bloqueado.processo.front().memoria.tamanho << "K ] [ " << bloqueado.processo.front().recursos.espera << " ]" << endl;
-    bloqueado.processo.front().recursos.espera--;
-    if ( bloqueado.processo.front().recursos.espera <= 0 ) {    // SE ACABOU O TEMPO DE ESPERA
-      pronto.processo.push( bloqueado.processo.front() );       // MANDA DO ESTADO DE ESPERA PARA PRONTO
-      bloqueado.processo.pop_front();                           //
+  cout << endl << endl << "ESPERA:" << endl;
+  while ( !bloqueado.empty() ) {                      // ENQUANTO TEM PROCESSOS EM ESTADO DE ESPERA
+    cout << "[ " << bloqueado.front().memoria.tamanho << "K ] [ " << bloqueado.front().recursos.espera << " ]" << endl;
+    bloqueado.front().recursos.espera--;              // DIMINUI O TEMPO DE ESPERA
+    if ( bloqueado.front().recursos.espera <= 0 ) {   // SE ACABOU O TEMPO DE ESPERA
+      pronto.push( bloqueado.front() );               // MANDA DO ESTADO DE ESPERA PARA PRONTO
+      bloqueado.pop_front();                          //
     }
-    else {                                                      // CONTINUA MOSTRANDO O RESTANTE COM UMA LISTA AUXILIAR
-      aux.push_front( bloqueado.processo.front() );             //
-      bloqueado.processo.pop_front();                           //
+    else {                                            // CONTINUA MOSTRANDO O RESTANTE COM UMA LISTA AUXILIAR
+      aux.push_front( bloqueado.front() );            //
+      bloqueado.pop_front();                          //
     }
   }
 
-  while ( !aux.empty() ) {                                      // RETORNA DA LISTA AUXILIAR PARA A LISTA DE ESPERA ORIGINAL
-    bloqueado.processo.push_front( aux.front() );               //
-    aux.pop_front();                                            //
+  while ( !aux.empty() ) {                            // RETORNA DA LISTA AUXILIAR PARA A LISTA DE ESPERA ORIGINAL
+    bloqueado.push_front( aux.front() );              //
+    aux.pop_front();                                  //
   }
 
 }
@@ -193,12 +181,12 @@ int main() {
   cout << "[ESPACO] | para chegar um processo." << endl;
 
   while (true) {
-    TEMPO++;                // TEMPORIZADOR
+    // TEMPO++;             // TEMPORIZADOR
     ENTRADA();              // +PROCESSO ?
     RUN();                  // CPU
     MONITOR_CPU();          // MONITORA CPU, OSCIOSA OU NAO ?
     MONITOR_MEMORIA();      // MOSTRA OS PROCESSOS ALOCADOS A MEMORIA
-    PROCESSOS_AGUARDANDO(&pronto.processo); // FILA DE PRONTO
+    PROCESSOS_AGUARDANDO(&pronto); // FILA DE PRONTO
     IO();                   // ENTRADA E SAIDA
   }
 
