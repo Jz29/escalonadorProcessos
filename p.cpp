@@ -1,26 +1,26 @@
 #include <iostream>
-#include <stdio.h>
 #include <stdlib.h>
 #include <list>
-// #include "processo.h"
 
 using namespace std;
 
-// typedef list<Processo> Lista;  // LISTA DE PROCESSOS
+// typedef list<int> Lista;  // LISTA DE PROCESSOS
+
+// Lista l;
+// Lista *m;
+
+// l.push_front(10);
+// l.push_front(11);
+// l.push_front(12);
 
 int main(){
+  int i = 10;
+  int *p;
+  *p = 2;
 
-  // Lista l;
-  list<int> l;
-  // Processo p;
+  // p = i;
 
-  l.push_front(10);
-  l.push_front(11);
-  l.push_front(12);
-
-  l.remove(16);
-
-  cout << l.front() << '\n';
+  cout << p << '\n';
 
   return 0;
 }

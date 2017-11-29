@@ -13,6 +13,8 @@ struct Recursos {
   int PID;
   int quantum;
   int burst;
+  int espera;
+  int timer;
   // OUTROS
 };
 
